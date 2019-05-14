@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: join-accel-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: join-accel-challenge-app
+  template:
+    metadata:
+      labels:
+        app: join-accel-challenge-app
+    spec:
+      containers:
+      - image: neoandrey/join-accel-challenge
+        name: accel-diff
+        env:
+        - name: APP_START_TYPE
+          value: "start"
+        - name: WEB_PORT
+          value: "3001"
+        - name: APP_TYPE
+          value: "acceleration-dv"
+        ports:
+        - containerPort: 3001
+        livenessProbe:
+         exec:
+          command:
+           - node
+           - /opt/app/accel_health_check.js
+         initialDelaySeconds: 10
+         periodSeconds: 5
+         failureThreshold: 100
+         timeoutSeconds: 3	
+      - image: neoandrey/join-accel-challenge
+        name: accel-div
+        env:
+         - name: APP_START_TYPE
+           value: "start"
+         - name: WEB_PORT
+           value: "3002"
+         - name: APP_TYPE
+           value: "acceleration-a"
+        ports:
+        - containerPort: 3002
+        livenessProbe:
+         exec:
+          command:
+           - node
+           - /opt/app/accel_health_check.js
+         initialDelaySeconds: 10
+         periodSeconds: 5
+         failureThreshold: 100
+         timeoutSeconds: 3
+      - image: neoandrey/join-accel-challenge
+        name: accel-calc
+        env:
+        - name: APP_START_TYPE
+          value: "start"
+        - name: WEB_PORT
+          value: "3000"
+        - name: APP_TYPE
+          value: "acceleration-calc"
+        - name: DV_URL
+          value: "http://127.0.0.1:3001/dv"
+        - name: A_URL
+          value: "http://127.0.0.1:3002/a"
+        ports:
+        - containerPort: 3000

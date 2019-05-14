@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name:   join-accel-service
+subsets:
+  - addresses:
+      - ip: 192.168.39.112
+    ports:
+      - port: 30000
