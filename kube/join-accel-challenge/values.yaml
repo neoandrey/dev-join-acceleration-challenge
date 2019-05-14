@@ -47,8 +47,13 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-initialDelaySeconds: 10
-periodSeconds: 5
-failureThreshold: 10
-timeoutSeconds: 3
+readiInitialDelaySeconds: 2
+readiPeriodSeconds: 1
+readiFailureThreshold: 100
+readiTimeoutSeconds: 10
+livenessInitialDelaySeconds: 6
+livenessPeriodSeconds: 2
+livenessFailureThreshold: 5000000
+livenessTimeoutSeconds: 10
+replicas: 2
 ipAddress: 192.168.39.112

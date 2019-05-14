@@ -1,17 +1,13 @@
-#Challenge Summary 
+### Challenge Summary 
 	Using Helm, write the necessary Kubernetes deployment and service files that can be used to create the full application, 
 	running 2 instances of each microservice. Only the calc of acceleration-calc microservices can be available outside of the kubernetes cluster.
 	Run the application on a kubernetes cluster like Minikube or Docker for Mac.
 	Make sure the application is stable.
 
 ### Proposed Solution
-
-	This solution is based on a container (neoandrey/join-accel-challenge) that was built from node:alpine to run any single one of the
-	microservices depending on the environment variable passed to the container at run time. In this container, node:alpine loaded with curl, yarn,
-	a copy of the join acceleration challenge repository  and a HEALTHCHECK feature written with node which helps to confirm the status of the nodes,
-	an entrypoint script which determines the  type of application that is run (i.e. accel-div, accel-calc,accel-diff ; where accel-div = accel-a).
-	- **_Dockerfile_**
-	```
+This solution is based on a container (neoandrey/join-accel-challenge) that was built from node:alpine to run any single one of the microservices depending on the environment variable passed to the container at run time. In this container, node:alpine loaded with curl, yarn, a copy of the join acceleration challenge repository  and a HEALTHCHECK feature written with node which helps to confirm the status of the nodes, an entrypoint script which determines the  type of application that is run (i.e. accel-div, accel-calc,accel-diff ; where accel-div = accel-a).
+_Dockerfile
+```
 FROM node:alpine
 
 MAINTAINER Bolaji Aina <neoandey@yahoo.com>
@@ -55,13 +51,14 @@ COPY  ./accel-entrypoint.sh ./
 
 EXPOSE $APP_PORT
 
-HEALTHCHECK --interval=3s --timeout=2s --start-period=8s CMD node /opt/app/accel                                                                                                                                                             _health_check.js
+HEALTHCHECK --interval=3s --timeout=2s --start-period=8s CMD node /opt/app/accel                                            _health_check.js
 
 CMD  ["sh","/opt/app/accel-entrypoint.sh"]
-```
-- **_ Health Check Nodejs script: accel_health_check.js _**
 
 ```
+* _Health Check Nodejs script: accel_health_check.js _
+
+``` 
 var http = require("http");
 const port = process.env.WEB_PORT;
 const checkInterval = process.env.CHECK_INTERVAL?process.env.CHECK_INTERVAL:1000 ;
@@ -187,7 +184,7 @@ process.exit(1);
 
 }
 ```
-- **_ Container Entry Script:  accel-entrypoint.sh _**
+*_Container Entry Script:  accel-entrypoint.sh_
 ```
 #!/bin/bash
 if [ "${WEB_PORT}" == '3002' ]; then
@@ -201,7 +198,7 @@ if [ "${WEB_PORT}" == '3000' ]; then
 fi
 yarn "${APP_START_TYPE}";
 ```
-- **_ Docker build command  _**
+Docker Build Command
 ```
 docker build   --build-arg APP_TYPE_1=acceleration-a \
                --build-arg APP_TYPE_2=acceleration-calc \
@@ -211,17 +208,16 @@ docker build   --build-arg APP_TYPE_1=acceleration-a \
                --build-arg APP_REPO_SRC="https://codeload.github.com/join-com/devops-challenge/zip/master" \
                -t join-accel-challenge .
 ```
-- **_ Docker run command  _**
+Docker Run Command
 ```
 docker run -d  -p3000:3000 --name accel_calc -e APP_START_TYPE=start -e WEB_PORT=3000  -e APP_TYPE=acceleration-calc neoandrey/join-accel-challenge
 docker run -d  -p3001:3001  --name accel_dif -e APP_START_TYPE=start -e WEB_PORT=3001 -e APP_TYPE=acceleration-dv  neoandrey/join-accel-challenge
-docker run -d  -p3002:3002 --name accel_div -e APP_START_TYPE=start  -e WEB_PORT=3002  -e APP_TYPE=acceleration-a  neoandrey/join-accel-challenge
+docker run -d  -p3002:3002 --name accel_div -e APP_START_TYPE=start  -e WEB_PORT=3002  -e APP_TYPE=acceleration-a  neoandrey/join-accel-challenge`
 ```
-
 ##### 1. Using Docker-compose
-         A possible solution can be achieved with Docker Compose ochestration by adding  an Autoheal container (e.g. willfarrell/autoheal) to a the join acceleration containers
-- **_ Docker Compose  _** 
-		```
+A possible solution can be achieved with Docker Compose ochestration by adding  an Autoheal container (e.g. willfarrell/autoheal container) to a the join acceleration containers
+*_Docker Compose_
+```
 version: '3.7'
 services:
   accel_div:
@@ -258,35 +254,43 @@ services:
        - AUTOHEAL_CONTAINER_LABEL=all
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-		```
-- **_ ENV Files  _** 
-#####1. calc.env
->APP_START_TYPE=start
->WEB_PORT=3000
->APP_TYPE=acceleration-calc
->DV_URL=http://accel_diff:3001/dv
->A_URL=http://accel_div:3002/a
-#####2. dif.env
->APP_START_TYPE=start
->WEB_PORT=3001
->APP_TYPE=acceleration-dv
-#####3. div.env
->APP_START_TYPE=start
->WEB_PORT=3002
->APP_TYPE=acceleration-a
+   ```
+ _ENV Files_
+##### 1. calc.env
+```
+ APP_START_TYPE=start
+ WEB_PORT=3000
+ APP_TYPE=acceleration-calc
+ DV_URL=http://accel_diff:3001/dv
+ A_URL=http://accel_div:3002/a
+ ```
 
-The docker compose calc service  can be accessed via an aws ec2 instance through the following link: [calc](http://ec2-34-220-62-218.us-west-2.compute.amazonaws.com:3000/calc?vf=200&vi=5&t=123)
+##### 2. dif.env
+```
+ APP_START_TYPE=start
+ WEB_PORT=3001
+ APP_TYPE=acceleration-dv
+```
+##### 3. div.env
+```
+APP_START_TYPE=start
+ WEB_PORT=3002
+ APP_TYPE=acceleration-a
+```
+The docker compose calc service  can be accessed via an aws ec2 instance through the following link:
+
+>[calc](http://ec2-34-220-62-218.us-west-2.compute.amazonaws.com:3000/calc?vf=200&vi=5&t=123)
+
 Please change the  parameters in the URL bar of the browser to test for different values.
 
 ##### 2. Using Kubernetes
-- **_join-accel-deployment.yaml_** 
-```
-apiVersion: apps/v1
+*_join-accel-deployment.yaml_* 
+```apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: join-accel-deployment
 spec:
-  replicas: 2
+  replicas: {{ $.Values.replicas }}
   selector:
     matchLabels:
       app: join-accel-challenge-app
@@ -307,15 +311,22 @@ spec:
           value: "acceleration-dv"
         ports:
         - containerPort: 3001
+        readinessProbe:
+         tcpSocket:
+          port: 3001
+         initialDelaySeconds: {{ $.Values.readinessInitialDelaySeconds }}
+         periodSeconds: {{ $.Values.readinessPeriodSeconds }}
+         failureThreshold: {{ $.Values.readinessFailureThreshold }}
+         timeoutSeconds: {{ $.Values.readinessTimeSeconds }}
         livenessProbe:
          exec:
           command:
            - node
            - /opt/app/accel_health_check.js
-         initialDelaySeconds: 10
-         periodSeconds: 5
-         failureThreshold: 100
-         timeoutSeconds: 3
+         initialDelaySeconds: {{ $.Values.livenessInitialDelaySeconds }}
+         periodSeconds: {{ $.Values.livenessPeriodSeconds }}
+         failureThreshold: {{ $.Values.livenessFailureThreshold }}
+         timeoutSeconds: {{ $.Values.livenessTimeSeconds }}
       - image: neoandrey/join-accel-challenge
         name: accel-div
         env:
@@ -327,15 +338,22 @@ spec:
            value: "acceleration-a"
         ports:
         - containerPort: 3002
+        readinessProbe:
+         tcpSocket:
+          port: 3002
+         initialDelaySeconds: {{ $.Values.readinessInitialDelaySeconds }}
+         periodSeconds: {{ $.Values.readinessPeriodSeconds }}
+         failureThreshold: {{ $.Values.readinessFailureThreshold }}
+         timeoutSeconds: {{ $.Values.readinessTimeSeconds }}
         livenessProbe:
          exec:
           command:
            - node
            - /opt/app/accel_health_check.js
-         initialDelaySeconds: 10
-         periodSeconds: 5
-         failureThreshold: 100
-         timeoutSeconds: 3
+         initialDelaySeconds: {{ $.Values.livenessInitialDelaySeconds }}
+         periodSeconds: {{ $.Values.livenessPeriodSeconds }}
+         failureThreshold: {{ $.Values.livenessFailureThreshold }}
+         timeoutSeconds: {{ $.Values.livenessTimeSeconds }}
       - image: neoandrey/join-accel-challenge
         name: accel-calc
         env:
@@ -351,8 +369,11 @@ spec:
           value: "http://127.0.0.1:3002/a"
         ports:
         - containerPort: 3000
+
+
 ```
-- ** _ join-accel-service.yaml _** 
+_join-accel-service.yaml_
+
 ```
 apiVersion: v1
 kind: Service
@@ -371,9 +392,14 @@ spec:
      port: 3000
      targetPort: 3000
 ```
-####Running 
-** kubectl create  -f  join-accel-service.yaml **
-** kubectl create  -f  join-accel-deployment.yaml **
-**Helm: helm install ./join-accel-challenge"
-**_ Calc Service Test command: curl 'http://192.168.39.112:30000/calc?vf=200&vi=5&t=1243' _**
-
+#### Running 
+```
+kubectl create  -f  join-accel-service.yaml
+kubectl create  -f  join-accel-deployment.yaml
+Helm: helm install ./join-accel-challenge
+```
+Calc Service Test command:
+```
+minikubeIp=192.168.39.112
+curl "http://${minikubeIp}:30000/calc?vf=200&vi=5&t=1243"
+```

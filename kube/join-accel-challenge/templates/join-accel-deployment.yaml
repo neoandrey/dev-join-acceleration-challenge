@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: join-accel-deployment
 spec:
-  replicas: 2
+  replicas: {{ $.Values.replicas }}
   selector:
     matchLabels:
       app: join-accel-challenge-app
@@ -24,15 +24,22 @@ spec:
           value: "acceleration-dv"
         ports:
         - containerPort: 3001
+        readinessProbe:
+         tcpSocket:
+          port: 3001
+         initialDelaySeconds: {{ $.Values.readinessInitialDelaySeconds }}
+         periodSeconds: {{ $.Values.readinessPeriodSeconds }}
+         failureThreshold: {{ $.Values.readinessFailureThreshold }}
+         timeoutSeconds: {{ $.Values.readinessTimeSeconds }}
         livenessProbe:
          exec:
           command:
            - node
            - /opt/app/accel_health_check.js
-         initialDelaySeconds: 10
-         periodSeconds: 5
-         failureThreshold: 100
-         timeoutSeconds: 3	
+         initialDelaySeconds: {{ $.Values.livenessInitialDelaySeconds }}
+         periodSeconds: {{ $.Values.livenessPeriodSeconds }}
+         failureThreshold: {{ $.Values.livenessFailureThreshold }}
+         timeoutSeconds: {{ $.Values.livenessTimeSeconds }}
       - image: neoandrey/join-accel-challenge
         name: accel-div
         env:
@@ -44,15 +51,22 @@ spec:
            value: "acceleration-a"
         ports:
         - containerPort: 3002
+        readinessProbe:
+         tcpSocket:
+          port: 3002
+         initialDelaySeconds: {{ $.Values.readinessInitialDelaySeconds }}
+         periodSeconds: {{ $.Values.readinessPeriodSeconds }}
+         failureThreshold: {{ $.Values.readinessFailureThreshold }}
+         timeoutSeconds: {{ $.Values.readinessTimeSeconds }}
         livenessProbe:
          exec:
           command:
            - node
            - /opt/app/accel_health_check.js
-         initialDelaySeconds: 10
-         periodSeconds: 5
-         failureThreshold: 100
-         timeoutSeconds: 3
+         initialDelaySeconds: {{ $.Values.livenessInitialDelaySeconds }}
+         periodSeconds: {{ $.Values.livenessPeriodSeconds }}
+         failureThreshold: {{ $.Values.livenessFailureThreshold }}
+         timeoutSeconds: {{ $.Values.livenessTimeSeconds }}
       - image: neoandrey/join-accel-challenge
         name: accel-calc
         env:
