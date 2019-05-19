@@ -334,7 +334,7 @@ APP_START_TYPE=start
 ```
 The docker compose calc service  can be accessed via an aws ec2 instance through the following link:
 
->[calc](http://ec2-34-220-62-218.us-west-2.compute.amazonaws.com:3000/calc?vf=200&vi=5&t=123)
+>[calc](http://ec2-54-70-85-109.us-west-2.compute.amazonaws.com:3000/calc?vf=200&vi=5&t=123)
 
 Please change the  parameters in the URL bar of the browser to test for different values.
 
