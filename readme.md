@@ -181,7 +181,7 @@ process.exit(1);
 
 }
 ```
-*_Container Entry Script:  accel-entrypoint.sh_
+_Container Entry Script:  accel-entrypoint.sh_
 ```
 #!/bin/bash
 function  start_app (){
@@ -246,9 +246,9 @@ docker run -d  --name accel_calc  -p3000:3000 -e APP_START_TYPE=dev   -e WEB_POR
 ```
 ##### 1. Using Docker-compose
 A possible solution can be achieved with Docker Compose ochestration since the accel-entrypoint.sh entry point of the containers monitors the health status of the containers and restarts th containers that are not producing desired results:
-*_Docker Compose_
+_Docker Compose_
 ```
-version: '3.7'
+version: '3'
 services:
   accel_div:
     image: neoandrey/join-accel-challenge
@@ -339,7 +339,7 @@ The docker compose calc service  can be accessed via an aws ec2 instance through
 Please change the  parameters in the URL bar of the browser to test for different values.
 
 ##### 2. Using Kubernetes
-*_join-accel-deployment.yaml_* 
+_join-accel-deployment.yaml_
 ```apiVersion: apps/v1
 kind: Deployment
 metadata:
