@@ -53,8 +53,8 @@ HEALTHCHECK --interval=3s --timeout=2s --start-period=8s CMD node /opt/app/accel
 CMD  ["sh","/opt/app/accel-entrypoint.sh"]
 
 ```
-* _Health Check Nodejs script: accel_health_check.js _
-
+##### Health Check Nodejs script: 
+*accel_health_check.js
 ``` 
 var http = require("http");
 const port = process.env.WEB_PORT;
