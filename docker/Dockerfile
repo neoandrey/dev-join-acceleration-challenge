@@ -36,6 +36,6 @@ COPY  ./accel-entrypoint.sh ./accel_health_check.js /opt/app/
 
 EXPOSE $APP_PORT
 
-HEALTHCHECK --interval=3s --timeout=2s --start-period=8s CMD node /opt/app/accel_health_check.js
+HEALTHCHECK --interval=3s --timeout=2s --start-period=8s CMD node /opt/app/accel                                                                                                                                                             _health_check.js
 
 CMD  ["sh","/opt/app/accel-entrypoint.sh"]
