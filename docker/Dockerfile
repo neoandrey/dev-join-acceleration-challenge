@@ -14,15 +14,11 @@ ENV APP_TYPE=""
 
 WORKDIR /opt/app
 
-RUN  apk add --no-cache --virtual .build-deps curl unzip  \
-     && curl  -o yarn_latest.tar.gz  https://yarnpkg.com/latest.tar.gz \
+RUN  apk add --no-cache --virtual .build-deps curl unzip yarn \
      && mkdir -p  /opt \
      && mkdir -p  /opt/repo
 
-ADD yarn_latest.tar.gz /opt/
-ENV PATH "$PATH:/opt/yarn/bin"
-
-RUN curl  -o repo.zip  "${APP_REPO_SRC}"  \
+RUN     curl  -o repo.zip  "${APP_REPO_SRC}"  \
         &&  unzip -o  repo.zip -d /opt/repo/ \
         &&  cp -r /opt/repo/$APP_BASE_FOLDER/* /opt/app/ \
         &&  if [ -e /opt/app/$APP_TYPE_1  ]; then cd /opt/app/$APP_TYPE_1; fi \

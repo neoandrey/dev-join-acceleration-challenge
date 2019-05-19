@@ -17,7 +17,7 @@ switch(port){
 					res.on("end", () => {
 						if(body.toString().toLowerCase()=='something wrong'){
 						  console.log('There is something wrong with the calc module. Returned: '+body.toString()+'. Exiting now...');
-					 	  process.exit(0);	
+					 	  process.exit(1);	
 						}else{
                                                    
 							var returnedData  = JSON.parse(body);

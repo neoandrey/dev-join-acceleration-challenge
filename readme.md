@@ -5,8 +5,9 @@
 	Make sure the application is stable.
 
 ### Proposed Solution
-This solution is based on a container (neoandrey/join-accel-challenge) that was built from node:alpine to run any single one of the microservices depending on the environment variable passed to the container at run time. In this container, node:alpine loaded with curl, yarn, a copy of the join acceleration challenge repository  and a HEALTHCHECK feature written with node which helps to confirm the status of the nodes, an entrypoint script which determines the  type of application that is run (i.e. accel-div, accel-calc,accel-diff ; where accel-div = accel-a).
-_Dockerfile
+This solution is based on a container (neoandrey/join-accel-challenge) that was built from node:alpine to run any single one of the microservices depending on the environment variable passed to the container at run time. In this container, node:alpine loaded with curl, yarn, a copy of the join acceleration challenge repository  and a HEALTHCHECK feature written with node which helps to confirm the status of the nodes, an entrypoint script which determines the  type of application that is run and monitors the containers to make sure they are healthy. (i.e. accel-div, accel-calc,accel-diff ; where accel-div = accel-a).
+
+#### Dockerfile
 ```
 FROM node:alpine
 
@@ -24,14 +25,10 @@ ENV APP_TYPE=""
 
 WORKDIR /opt/app
 
-RUN  apk add --no-cache --virtual .build-deps curl unzip  \
-     && curl  -o yarn_latest.tar.gz  https://yarnpkg.com/latest.tar.gz \
+RUN  apk add --no-cache --virtual .build-deps curl unzip yarn  \
      && mkdir -p  /opt \
      && mkdir -p  /opt/repo
-
-ADD yarn_latest.tar.gz /opt/
-ENV PATH "$PATH:/opt/yarn/bin"
-
+     
 RUN curl  -o repo.zip  "${APP_REPO_SRC}"  \
         &&  unzip -o  repo.zip -d /opt/repo/ \
         &&  cp -r /opt/repo/$APP_BASE_FOLDER/* /opt/app/ \
@@ -78,7 +75,7 @@ request = http.get(reqUrl, res => {
 	res.on("end", () => {
 			if(body.toString().toLowerCase()=='something wrong'){
 			  console.log('There is something wrong with the calc module. Returned: '+body.toString()+'. Exiting now...');
-			  process.exit(0);
+			  process.exit(1);
 			}else{
 
 					var returnedData  = JSON.parse(body);
@@ -187,16 +184,48 @@ process.exit(1);
 *_Container Entry Script:  accel-entrypoint.sh_
 ```
 #!/bin/bash
-if [ "${WEB_PORT}" == '3002' ]; then
-      cd  /opt/app/acceleration-a
-fi
-if [ "${WEB_PORT}" == '3001' ]; then
-        cd  /opt/app/acceleration-dv
-fi
+function  start_app (){
+
+        res=$1
+        while [  3 -gt 2 ];
+        do
+              echo "$res"
+              if [ "$res" == "Something wrong"  ] ||  [ "$res" == "something wrong"  ];
+                   then
+                   pgrep node | xargs -n1 kill
+                   yarn "${APP_START_TYPE}" &
+                fi;
+                sleep $2
+                if  [ "${WEB_PORT}" == '3002' ]; then
+                 res=$( curl 'http://127.0.0.1:3002/a?dv=200&t=5' );
+                elif [ "${WEB_PORT}" == '3001' ]; then
+                   res=$( curl 'http://127.0.0.1:3001/dv?vf=200&vi=5');
+                elif [ "${WEB_PORT}" == '3000' ]; then
+                   res=$( curl 'http://127.0.0.1:3000/calc?vf=200&vi=5&t=123' );
+                fi
+   done
+
+}
 if [ "${WEB_PORT}" == '3000' ]; then
-     cd  /opt/app/acceleration-calc
+      cd  /opt/app/acceleration-calc
+      yarn "${APP_START_TYPE}" &
+      sleep 20s
+      res=$( curl 'http://127.0.0.1:3000/calc?vf=200&vi=5&t=123' );
+      start_app "$res"  "18s";
+elif  [ "${WEB_PORT}" == '3002' ]; then
+      cd  /opt/app/acceleration-a
+      yarn "${APP_START_TYPE}" &
+      sleep 10s
+      res=$( curl 'http://127.0.0.1:3002/a?dv=200&t=5' );
+      start_app "$res"  "4s";
+elif [ "${WEB_PORT}" == '3001' ]; then
+       cd  /opt/app/acceleration-dv
+         yarn "${APP_START_TYPE}" &
+      sleep 10s
+        res=$( curl 'http://127.0.0.1:3001/dv?vf=200&vi=5')
+        start_app "$res"  "4s";
 fi
-yarn "${APP_START_TYPE}";
+
 ```
 Docker Build Command
 ```
@@ -210,18 +239,20 @@ docker build   --build-arg APP_TYPE_1=acceleration-a \
 ```
 Docker Run Command
 ```
-docker run -d  -p3000:3000 --name accel_calc -e APP_START_TYPE=start -e WEB_PORT=3000  -e APP_TYPE=acceleration-calc neoandrey/join-accel-challenge
 docker run -d  -p3001:3001  --name accel_dif -e APP_START_TYPE=start -e WEB_PORT=3001 -e APP_TYPE=acceleration-dv  neoandrey/join-accel-challenge
 docker run -d  -p3002:3002 --name accel_div -e APP_START_TYPE=start  -e WEB_PORT=3002  -e APP_TYPE=acceleration-a  neoandrey/join-accel-challenge`
+docker run -d  --name accel_calc  -p3000:3000 -e APP_START_TYPE=dev   -e WEB_PORT=3000  -e DV_URL='http://172.17.0.3:3001/dv' -e A_URL='http://172.17.0.2:3002/a'  -e APP_TYPE=acceleration-calc join-accel-challenge
+#note that the ip of the other containers should be used for the manual run of accel_calc
 ```
 ##### 1. Using Docker-compose
-A possible solution can be achieved with Docker Compose ochestration by adding  an Autoheal container (e.g. willfarrell/autoheal container) to a the join acceleration containers
+A possible solution can be achieved with Docker Compose ochestration since the accel-entrypoint.sh entry point of the containers monitors the health status of the containers and restarts th containers that are not producing desired results:
 *_Docker Compose_
 ```
 version: '3.7'
 services:
   accel_div:
     image: neoandrey/join-accel-challenge
+    restart: always
     ports:
      - "3002:3002"
     env_file:
@@ -230,6 +261,7 @@ services:
       - production
   accel_diff:
     image: neoandrey/join-accel-challenge
+    restart: always
     ports:
      - "3001:3001"
     env_file:
@@ -247,14 +279,37 @@ services:
     depends_on:
       - accel_div
       - accel_diff
-  autoheal:
-    restart: always
-    image: willfarrell/autoheal
-    environment:
-       - AUTOHEAL_CONTAINER_LABEL=all
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
    ```
+ cronjob for restarting uhealthy containers
+ ```
+ #!/bin/bash
+cd  /home/ec2-user/docker/join/
+docker-compose-restart(){
+    sudo docker-compose stop $@
+    sudo docker-compose rm -f -v $@
+    sudo docker-compose create --force-recreate $@
+    sudo docker-compose start $@
+}
+
+res=$( docker inspect join_accel_diff_1  | grep Status.*h )
+res=$(cut -d':' -f2 <<<"$res")
+res=$(cut -d',' -f1 <<<"$res")
+echo  "accel_diff: ${res}"
+if [ $res != '"healthy"' ]
+   then
+   $( docker-compose-restart accel_diff);
+fi
+
+res=$( docker inspect join_accel_div_1 | grep Status.*h )
+res=$(cut -d':' -f2 <<<"$res")
+res=$(cut -d',' -f1 <<<"$res")
+echo  "accel_div - ${res}"
+
+if [ $res != '"healthy"' ]
+   then
+    $( docker-compose-restart accel_div );
+fi
+ ```
  _ENV Files_
 ##### 1. calc.env
 ```

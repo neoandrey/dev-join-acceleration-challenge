@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   accel_div:
-    image: neoandrey/join-accel-challenge
+    image: join-accel-challenge
     ports:
      - "3002:3002"
     env_file:
@@ -9,7 +9,7 @@ services:
     environment:
       - production
   accel_diff:
-    image: neoandrey/join-accel-challenge
+    image: join-accel-challenge
     ports:
      - "3001:3001"
     env_file:
@@ -17,7 +17,7 @@ services:
     environment:
       - production
   accel_calc:
-    image: neoandrey/join-accel-challenge
+    image: join-accel-challenge
     ports:
      - "3000:3000"
     env_file:
@@ -27,10 +27,3 @@ services:
     depends_on:
       - accel_div
       - accel_diff
-  autoheal:
-    restart: always
-    image: willfarrell/autoheal
-    environment:
-       - AUTOHEAL_CONTAINER_LABEL=all
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
